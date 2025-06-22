@@ -50,7 +50,7 @@ def extract_json(text):
 
 
 
-def generate_report(transcription, jsonl_path, model_name="meta-llama/Meta-Llama-3-8B-Instruct", num_shots=3, max_new_tokens=1024):
+def generate_report(transcription, jsonl_path, model_name="tiiuae/falcon-rw-1b", num_shots=3, max_new_tokens=1024):
     print("🔍 Generating report for input transcription...")
     fewshots = load_fewshot_examples(jsonl_path, num_shots)
     prompt = build_prompt(fewshots, transcription)
