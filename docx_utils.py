@@ -1,38 +1,39 @@
 import json
-from docx import Document
 
-def generate_pretty_docx(json_data_str, output_path="generated_report.docx"):
+def generate_pretty_txt(json_data_str, output_path="generated_report.txt"):
     try:
         data = json.loads(json_data_str)
     except json.JSONDecodeError:
-        doc = Document()
-        doc.add_heading("Relatório Clínico", level=1)
-        doc.add_paragraph("Erro: JSON inválido.")
-        doc.save(output_path)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("Relatório Clínico\n")
+            f.write("Erro: JSON inválido.\n")
         return
 
-    doc = Document()
-    doc.add_heading("Relatório Clínico", level=1)
+    lines = []
+    lines.append("Relatório Clínico")
+    lines.append("=" * 40)
 
     def add_section(title, content):
-        doc.add_heading(title, level=2)
+        lines.append(f"\n{title.upper()}")
+        lines.append("-" * len(title))
         if isinstance(content, list):
             for item in content:
-                doc.add_paragraph(item, style="List Bullet")
+                lines.append(f"- {item}")
         elif isinstance(content, dict):
             for k, v in content.items():
-                doc.add_paragraph(f"{k.capitalize()}: {v}")
+                lines.append(f"{k.capitalize()}: {v}")
         elif content:
-            doc.add_paragraph(str(content))
+            lines.append(str(content))
 
-    doc.add_paragraph(f"Data do Exame: {data.get('data_exame', '')}")
-    doc.add_paragraph(f"Clínica: {data.get('clinica', '')}")
+    lines.append(f"\nData do Exame: {data.get('data_exame', '')}")
+    lines.append(f"Clínica: {data.get('clinica', '')}")
 
     animal = data.get("animal", {})
-    doc.add_heading("Animal", level=2)
+    lines.append("\nANIMAL")
+    lines.append("-" * 10)
     for k, v in animal.items():
-        if v:  # only include non-empty fields
-            doc.add_paragraph(f"{k.capitalize()}: {v}")
+        if v:
+            lines.append(f"{k.capitalize()}: {v}")
 
     add_section("Motivo da Consulta", data.get("motivo_consulta", ""))
     add_section("Anamnese", data.get("anamnese", ""))
@@ -41,21 +42,24 @@ def generate_pretty_docx(json_data_str, output_path="generated_report.docx"):
 
     exames = data.get("exames_complementares", {})
     if exames:
-        doc.add_heading("Exames Complementares", level=2)
+        lines.append("\nEXAMES COMPLEMENTARES")
+        lines.append("-" * 24)
         for tipo, sub in exames.items():
             for nome, detalhe in sub.items():
-                doc.add_paragraph(f"{tipo.upper()} - {nome}", style="List Bullet")
-                doc.add_paragraph(f"Descrição: {detalhe.get('descricao', '')}")
+                lines.append(f"{tipo.upper()} - {nome}")
+                lines.append(f"Descrição: {detalhe.get('descricao', '')}")
                 for proj in detalhe.get("projecoes", []):
-                    doc.add_paragraph(f"Projeção: {proj}", style="List Bullet")
+                    lines.append(f"Projeção: {proj}")
                 for achado in detalhe.get("achados", []):
-                    doc.add_paragraph(f"Achado: {achado}", style="List Bullet")
+                    lines.append(f"Achado: {achado}")
 
     tratamento = data.get("tratamento", [])
     if tratamento:
-        add_section("Tratamento", [f"{t['tipo']} - {t['medicamento']} ({t['dose']})" for t in tratamento])
+        formatted = [f"{t['tipo']} - {t['medicamento']} ({t['dose']})" for t in tratamento]
+        add_section("Tratamento", formatted)
 
     add_section("Recomendações", data.get("recomendacoes", {}).get("observacoes_adicionais", []))
     add_section("Indicações de Ferragem", data.get("indicacoes_ferragem", {}))
 
-    doc.save(output_path)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))

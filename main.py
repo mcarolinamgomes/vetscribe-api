@@ -1,16 +1,13 @@
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
 from whisper_utils import transcribe_audio
 from llama3_utils import generate_report
-from docx_utils import generate_pretty_docx
+from txt_utils import generate_pretty_txt  # changed from docx_utils
 import uuid
 import shutil
 
-
 app = FastAPI()
-
 
 @app.post("/upload")
 async def upload_audio(file: UploadFile = File(...)):
@@ -26,22 +23,20 @@ async def upload_audio(file: UploadFile = File(...)):
     # Step 2: Generate report as JSON string
     json_report = generate_report(transcription, "few_shot_data.jsonl")
 
-    # Step 3: Generate DOCX file
-    output_docx = f"report_{uuid.uuid4().hex}.docx"
-    generate_pretty_docx(json_report, output_path=output_docx)
+    # Step 3: Generate TXT file
+    output_txt = f"report_{uuid.uuid4().hex}.txt"
+    generate_pretty_txt(json_report, output_path=output_txt)
 
     # Step 4: Clean up audio file
     os.remove(temp_audio_path)
 
-    # Step 5: Return DOCX as proper file response
+    # Step 5: Return TXT as proper file response
     return FileResponse(
-        output_docx,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        filename="relatorio_clinico.docx"
+        output_txt,
+        media_type="text/plain",
+        filename="relatorio_clinico.txt"
     )
 
-
-
 @app.get("/download/{filename}")
-def download_docx(filename: str):
+def download_txt(filename: str):
     return FileResponse(path=filename, filename=filename)
