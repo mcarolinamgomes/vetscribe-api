@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 import os
 from whisper_utils import transcribe_audio
 from llama3_utils import generate_report
@@ -8,6 +9,14 @@ import uuid
 import shutil
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or specify your frontend domain instead of "*"
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 
 @app.post("/upload")
 async def upload_audio(file: UploadFile = File(...)):
