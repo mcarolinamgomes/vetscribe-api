@@ -1,39 +1,34 @@
 import json
-
-def generate_pretty_txt(json_data_str, output_path="generated_report.txt"):
+def generate_pretty_txt(json_data_str, output_path="report.txt"):
     try:
         data = json.loads(json_data_str)
     except json.JSONDecodeError:
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write("Relatório Clínico\n")
-            f.write("Erro: JSON inválido.\n")
+            f.write("Erro: JSON inválido.")
         return
 
     lines = []
-    lines.append("Relatório Clínico")
-    lines.append("=" * 40)
 
-    def add_section(title, content):
-        lines.append(f"\n{title.upper()}")
-        lines.append("-" * len(title))
-        if isinstance(content, list):
-            for item in content:
-                lines.append(f"- {item}")
-        elif isinstance(content, dict):
-            for k, v in content.items():
-                lines.append(f"{k.capitalize()}: {v}")
-        elif content:
-            lines.append(str(content))
-
-    lines.append(f"\nData do Exame: {data.get('data_exame', '')}")
-    lines.append(f"Clínica: {data.get('clinica', '')}")
+    lines.append("Relatório Clínico\n")
+    lines.append(f"Data do Exame: {data.get('data_exame', '')}")
+    lines.append(f"Clínica: {data.get('clinica', '')}\n")
 
     animal = data.get("animal", {})
-    lines.append("\nANIMAL")
-    lines.append("-" * 10)
+    lines.append("Animal:")
     for k, v in animal.items():
         if v:
             lines.append(f"{k.capitalize()}: {v}")
+    lines.append("")
+
+    def add_section(title, content):
+        lines.append(title)
+        if isinstance(content, list):
+            lines.extend(f"- {item}" for item in content)
+        elif isinstance(content, dict):
+            lines.extend(f"{k.capitalize()}: {v}" for k, v in content.items())
+        elif content:
+            lines.append(str(content))
+        lines.append("")
 
     add_section("Motivo da Consulta", data.get("motivo_consulta", ""))
     add_section("Anamnese", data.get("anamnese", ""))
@@ -42,21 +37,18 @@ def generate_pretty_txt(json_data_str, output_path="generated_report.txt"):
 
     exames = data.get("exames_complementares", {})
     if exames:
-        lines.append("\nEXAMES COMPLEMENTARES")
-        lines.append("-" * 24)
+        lines.append("Exames Complementares:")
         for tipo, sub in exames.items():
             for nome, detalhe in sub.items():
                 lines.append(f"{tipo.upper()} - {nome}")
                 lines.append(f"Descrição: {detalhe.get('descricao', '')}")
-                for proj in detalhe.get("projecoes", []):
-                    lines.append(f"Projeção: {proj}")
-                for achado in detalhe.get("achados", []):
-                    lines.append(f"Achado: {achado}")
+                lines.extend(f"Projeção: {proj}" for proj in detalhe.get("projecoes", []))
+                lines.extend(f"Achado: {achado}" for achado in detalhe.get("achados", []))
+        lines.append("")
 
     tratamento = data.get("tratamento", [])
     if tratamento:
-        formatted = [f"{t['tipo']} - {t['medicamento']} ({t['dose']})" for t in tratamento]
-        add_section("Tratamento", formatted)
+        add_section("Tratamento", [f"{t['tipo']} - {t['medicamento']} ({t['dose']})" for t in tratamento])
 
     add_section("Recomendações", data.get("recomendacoes", {}).get("observacoes_adicionais", []))
     add_section("Indicações de Ferragem", data.get("indicacoes_ferragem", {}))
