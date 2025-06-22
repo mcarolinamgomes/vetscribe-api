@@ -1,15 +1,17 @@
-# Use the Python 3 alpine official image
-# https://hub.docker.com/_/python
-FROM python:3-alpine
+# Use the Python 3 Alpine official image
+FROM python:3.10-alpine
 
-# Create and change to the app directory.
+# Set working directory
 WORKDIR /app
 
-# Copy local code to the container image.
+# Install ffmpeg and other build dependencies
+RUN apk add --no-cache ffmpeg gcc musl-dev libffi-dev
+
+# Copy project files
 COPY . .
 
-# Install project dependencies
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Run the web service on container startup.
+# Run the web service on container startup
 CMD ["hypercorn", "main:app", "--bind", "::"]
