@@ -10,12 +10,6 @@ import shutil
 
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/")
-def serve_frontend():
-    with open("static/index.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
 
 
 @app.post("/upload")
