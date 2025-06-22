@@ -10,13 +10,13 @@ import shutil
 
 app = FastAPI()
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # or specify your frontend domain instead of "*"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
 
 @app.post("/upload")
 async def upload_audio(file: UploadFile = File(...)):
