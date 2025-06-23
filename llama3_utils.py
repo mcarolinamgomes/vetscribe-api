@@ -1,7 +1,7 @@
 import json
 import random
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 
 def build_prompt(fewshot_examples, test_transcription):
@@ -49,21 +49,22 @@ def extract_json(text):
 def generate_report(
     transcription,
     jsonl_path,
-    model_name="bigscience/bloom-560m",  # ✅ Public, no-auth model
+    model_name="MBZUAI/LaMini-Flan-T5-248M",  # ✅ Small, fast, no-auth
     num_shots=3,
-    max_new_tokens=1024
+    max_new_tokens=512
 ):
     print("🔍 Generating report for input transcription...")
     fewshots = load_fewshot_examples(jsonl_path, num_shots)
     prompt = build_prompt(fewshots, transcription)
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float32)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
     model.eval()
 
-    input_ids = tokenizer(prompt, return_tensors="pt").input_ids
-    input_ids = input_ids.to(model.device if torch.cuda.is_available() else "cpu")
+    input_ids = tokenizer(prompt, return_tensors="pt", truncation=True).input_ids.to(device)
 
     with torch.no_grad():
         output = model.generate(
@@ -72,7 +73,7 @@ def generate_report(
             do_sample=True,
             top_p=0.95,
             temperature=0.7,
-            pad_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.pad_token_id,
         )
 
     decoded = tokenizer.decode(output[0], skip_special_tokens=True)
@@ -91,7 +92,7 @@ def generate_report(
     return json_report
 
 
-# Optional: Local test
+# Optional local test
 if __name__ == "__main__":
     transcription_text = "Transcrição: ... (your input here)"
     fewshot_jsonl_path = "few_shot_learning_data.jsonl"
