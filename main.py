@@ -10,6 +10,7 @@ import shutil
 
 app = FastAPI()
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # or specify your frontend domain instead of "*"
